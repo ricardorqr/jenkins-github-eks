@@ -17,6 +17,7 @@ Link: http://ec2-18-204-55-100.compute-1.amazonaws.com:8080/
 - Kubernetes
 - Kubernetes Credentials
 - Kubernetes Client API
+- GitHub Integration
 
 #### Code
 
