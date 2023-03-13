@@ -10,7 +10,7 @@
 
 Link: http://ec2-18-204-55-100.compute-1.amazonaws.com:8080/
 
-#### Used plugins
+### Used plugins
 
 - Docker
 - Docker Pipeline
@@ -19,20 +19,21 @@ Link: http://ec2-18-204-55-100.compute-1.amazonaws.com:8080/
 - Kubernetes Client API
 - GitHub Integration
 
-#### Code
+### Code
 
+CI
 ```groovy
 pipeline {
     agent any
-    
+
     tools {
         maven 'maven'
     }
-    
+
     environment {
         registry = "092369361076.dkr.ecr.us-east-1.amazonaws.com/test-ecr"
     }
-    
+
     stages {
         stage('Checkout the Code') {
             steps {
@@ -42,32 +43,60 @@ pipeline {
 
         stage('Build the JAR') {
             steps {
-                sh 'mvn clean install'           
+                sh 'mvn clean install'
             }
         }
-    
+
         stage('Building the Image') {
             steps {
                 script {
-                    dockerImage = docker.build registry 
+                    dockerImage = docker.build registry
                 }
             }
         }
-    
+
         stage('Push into the ECR') {
-            steps{  
+            steps{
                 script {
                     sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 092369361076.dkr.ecr.us-east-1.amazonaws.com'
                     sh 'docker push 092369361076.dkr.ecr.us-east-1.amazonaws.com/test-ecr:latest'
                 }
             }
         }
-    
+    }
+}
+```
+
+CD
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout the Code') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/ricardorqr/springboot-app']]])
+            }
+        }
+
         stage('Deploy into EKS') {
-            steps{   
+            steps{
                 script {
-                    withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'Kubeconfig', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
-                        sh ('kubectl apply -f  eks-deploy-k8s.yaml')
+                    withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'Kubeconfig-EKS-us-east-2', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
+                        script {
+                            def exists = sh(
+                                    script: "kubectl get deployment springboot-app",
+                                    returnStatus: true
+                            ) == 0
+                            if (exists) {
+                                echo "Delete Deployment and Service"
+                                sh ('kubectl delete -f  eks-deploy-k8s.yaml')
+                                sh ('kubectl apply -f  eks-deploy-k8s.yaml')
+                            } else {
+                                echo "Create Deployment and Service"
+                                sh ('kubectl apply -f  eks-deploy-k8s.yaml')
+                            }
+                        }
                     }
                 }
             }
