@@ -89,12 +89,15 @@ pipeline {
                                     returnStatus: true
                             ) == 0
                             if (exists) {
-                                echo "Delete Deployment and Service"
-                                sh ('kubectl delete -f  eks-deploy-k8s.yaml')
-                                sh ('kubectl apply -f  eks-deploy-k8s.yaml')
+                                echo "Update deployment image"
+                                // sh ('kubectl delete -f eks-deploy-k8s.yaml')
+                                // sh ('kubectl apply -f eks-deploy-k8s.yaml')
+
+                                sh ('kubectl rollout restart deployment/springboot-app')
+                                sh ('kubectl rollout status deployment/springboot-app')
                             } else {
-                                echo "Create Deployment and Service"
-                                sh ('kubectl apply -f  eks-deploy-k8s.yaml')
+                                echo "Create deployment and service manifest"
+                                sh ('kubectl apply -f eks-deploy-k8s.yaml')
                             }
                         }
                     }
