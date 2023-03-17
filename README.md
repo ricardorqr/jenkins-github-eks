@@ -82,7 +82,7 @@ pipeline {
         stage('Deploy into EKS') {
             steps{
                 script {
-                    withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'Kubeconfig-EKS-us-east-2', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
+                    kubeconfig(credentialsId: 'Kubeconfig', serverUrl: '') {
                         script {
                             def exists = sh(
                                     script: "kubectl get deployment springboot-app",
@@ -90,9 +90,6 @@ pipeline {
                             ) == 0
                             if (exists) {
                                 echo "Update deployment image"
-                                // sh ('kubectl delete -f eks-deploy-k8s.yaml')
-                                // sh ('kubectl apply -f eks-deploy-k8s.yaml')
-
                                 sh ('kubectl rollout restart deployment/springboot-app')
                                 sh ('kubectl rollout status deployment/springboot-app')
                             } else {
