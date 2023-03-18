@@ -8,7 +8,7 @@
 
 ![Infrastructure](.files/EKS%20Veeva-Jenkins.drawio.png)
 
-Link: http://ec2-3-144-94-235.us-east-2.compute.amazonaws.com:8080/
+Link: http://ec2-3-239-79-165.compute-1.amazonaws.com:8080/
 
 # Used plugins
 
