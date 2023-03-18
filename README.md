@@ -21,6 +21,8 @@ Link: http://ec2-3-144-94-235.us-east-2.compute.amazonaws.com:8080/
 
 # Pipeline scripts
 
+NOTE: Update the AWS account ID.
+
 CI
 ```groovy
 pipeline {
@@ -31,7 +33,7 @@ pipeline {
     }
 
     environment {
-        registry = "092369361076.dkr.ecr.us-east-1.amazonaws.com/test-ecr"
+        registry = "012345678901.dkr.ecr.us-east-1.amazonaws.com/test-ecr"
     }
 
     stages {
@@ -58,8 +60,8 @@ pipeline {
         stage('Push into the ECR') {
             steps{
                 script {
-                    sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 092369361076.dkr.ecr.us-east-1.amazonaws.com'
-                    sh 'docker push 092369361076.dkr.ecr.us-east-1.amazonaws.com/test-ecr:latest'
+                    sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 012345678901.dkr.ecr.us-east-1.amazonaws.com'
+                    sh 'docker push 012345678901.dkr.ecr.us-east-1.amazonaws.com/test-ecr:latest'
                 }
             }
         }
