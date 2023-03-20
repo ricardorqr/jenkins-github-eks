@@ -33,7 +33,8 @@ pipeline {
     }
 
     environment {
-        registry = "012345678901.dkr.ecr.us-east-1.amazonaws.com/test-ecr"
+        registry = "012345678901.dkr.ecr.us-east-1.amazonaws.com/REPOSITORY_NAME"
+        GIT_COMMIT = (sh(script: "git rev-parse HEAD", returnStdout: true)).trim()
     }
 
     stages {
@@ -49,6 +50,14 @@ pipeline {
             }
         }
 
+        stage('Delete Old Images') {
+            steps {
+                script {
+                    sh 'docker system prune'
+                }
+            }
+        }
+
         stage('Building the Image') {
             steps {
                 script {
@@ -60,8 +69,12 @@ pipeline {
         stage('Push into the ECR') {
             steps{
                 script {
+                    def commitId = GIT_COMMIT[0..5]
+                    def buildNumber = "${env.BUILD_NUMBER}"
+
                     sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 012345678901.dkr.ecr.us-east-1.amazonaws.com'
-                    sh 'docker push 012345678901.dkr.ecr.us-east-1.amazonaws.com/test-ecr:latest'
+                    sh "docker tag 012345678901.dkr.ecr.us-east-1.amazonaws.com/REPOSITORY_NAME 012345678901.dkr.ecr.us-east-1.amazonaws.com/REPOSITORY_NAME:${buildNumber}.${commitId}"
+                    sh "docker push 012345678901.dkr.ecr.us-east-1.amazonaws.com/REPOSITORY_NAME:${buildNumber}.${commitId}"
                 }
             }
         }
@@ -92,6 +105,12 @@ pipeline {
                             ) == 0
                             if (exists) {
                                 echo "Update deployment image"
+
+                                def image = sh(returnStdout: true, script: """
+                                    aws ecr describe-images --repository-name REPOSITORY_NAME --region us-east-1 --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags'
+                                """).trim().substring(2)
+
+                                sh ("kubectl set image deployment/springboot-app springboot-app=012345678901.dkr.ecr.us-east-1.amazonaws.com/REPOSITORY_NAME:${image}")
                                 sh ('kubectl rollout restart deployment/springboot-app')
                                 sh ('kubectl rollout status deployment/springboot-app')
                             } else {
